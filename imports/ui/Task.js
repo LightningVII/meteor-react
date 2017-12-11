@@ -4,9 +4,9 @@ import React, { Component } from 'react';
 export default class Task extends Component {
     toggleChecked = () => {
         // Set the checked property to the opposite of its current value
-        const {_id, checked} = this.props.task
+        const { _id, checked } = this.props.task;
         this.props.handleToggle(_id, !checked);
-    }
+    };
 
     deleteThisTask = () => {
         this.props.handleDelete(this.props.task._id);
@@ -30,7 +30,10 @@ export default class Task extends Component {
                     onClick={this.toggleChecked}
                 />
 
-                <span className="text">{this.props.task.text}</span>
+                <span className="text">
+                    <strong>{this.props.task.username}</strong>:{' '}
+                    {this.props.task.text}
+                </span>
             </li>
         );
     }
