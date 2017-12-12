@@ -18,12 +18,7 @@ class App extends Component {
         // Find the text field via the React ref
         const text = this.textInput.value.trim();
 
-        Tasks.insert({
-            text,
-            createdAt: new Date(), // current time
-            owner: Meteor.userId(), // _id of logged in user
-            username: Meteor.user().username // username of logged in user
-        });
+        Meteor.call('tasks.insert', text);
 
         // Clear form
         this.textInput.value = '';
@@ -37,13 +32,15 @@ class App extends Component {
 
     toggleChecked = (id, checked) => {
         // Set the checked property to the opposite of its current value
-        Tasks.update(id, {
-            $set: { checked: checked }
-        });
+        Meteor.call('tasks.setChecked', id, checked);
     };
 
     deleteThisTask = id => {
-        Tasks.remove(id);
+        Meteor.call('tasks.remove', id);
+    };
+
+    togglePrivate = (id, authority) => {
+        Meteor.call('tasks.setPrivate', id, authority);
     };
 
     renderTasks = () => {
@@ -51,14 +48,22 @@ class App extends Component {
         if (this.state.hideCompleted) {
             filteredTasks = filteredTasks.filter(task => !task.checked);
         }
-        return filteredTasks.map(task => (
-            <Task
-                key={task._id}
-                task={task}
-                handleDelete={this.deleteThisTask}
-                handleToggle={this.toggleChecked}
-            />
-        ));
+        return filteredTasks.map(task => {
+            const currentUserId =
+                this.props.currentUser && this.props.currentUser._id;
+            const showPrivateButton = task.owner === currentUserId;
+
+            return (
+                <Task
+                    key={task._id}
+                    task={task}
+                    handleDelete={this.deleteThisTask}
+                    handleToggle={this.toggleChecked}
+                    handlePrivate={this.togglePrivate}
+                    showPrivateButton={showPrivateButton}
+                />
+            );
+        });
     };
 
     render() {
@@ -104,6 +109,7 @@ class App extends Component {
 }
 
 export default withTracker(() => {
+    Meteor.subscribe('tasks');
     return {
         tasks: Tasks.find({}, { sort: { createdAt: -1 } }).fetch(),
         incompleteCount: Tasks.find({ checked: { $ne: true } }).count(),
